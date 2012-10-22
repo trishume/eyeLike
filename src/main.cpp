@@ -15,8 +15,8 @@
 const int kSobelKernelSize = 5;
 const int kWeightBlurSize = 7;
 const float kWeightDivisor = 150.0;
-const float kGradientThreshold = 0.1;
-const int kFastEyeWidth = 60;
+const double kGradientThreshold = 500.0;
+const int kFastEyeWidth = 65;
 const float kPostProcessThreshold = 0.96;
 
 /** Function Headers */
@@ -31,10 +31,10 @@ std::string face_window_name = "Capture - Face";
 cv::RNG rng(12345);
 cv::Mat debugImage;
 
-int eye_percent_top = 30;
+int eye_percent_top = 25;
 int eye_percent_side = 13;
-int eye_percent_height = 20;
-int eye_percent_width = 30;
+int eye_percent_height = 30;
+int eye_percent_width = 35;
 
 /**
  * @function main
@@ -78,6 +78,9 @@ int main( int argc, const char** argv ) {
       
       int c = cv::waitKey(10);
       if( (char)c == 'c' ) { break; }
+      if( (char)c == 'f' ) {
+        imwrite("frame.png",frame);
+      }
       
     }
   }
@@ -89,14 +92,11 @@ bool rectInImage(cv::Rect rect, cv::Mat image) {
     rect.y+rect.height < image.rows;
 }
 
-float testPossibleCenterFormula(int cx, int cy, const cv::Mat &weight,
-                                 const cv::Mat &gradientX, const cv::Mat &gradientY) {
-  double sum = 0;
-  // iterate over the gradient starts
-  for (int y = 0; y < weight.rows; ++y) {
-    const unsigned char *Wr = weight.ptr<unsigned char>(y);
-    const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
-    for (int x = 0; x < weight.cols; ++x) {
+void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
+  // for all possible centers
+  for (int cy = 0; cy < out.rows; ++cy) {
+    double *Or = out.ptr<double>(cy);
+    for (int cx = 0; cx < out.cols; ++cx) {
       if (x == cx && y == cy) {
         continue;
       }
@@ -107,14 +107,11 @@ float testPossibleCenterFormula(int cx, int cy, const cv::Mat &weight,
       double magnitude = sqrt((dx * dx) + (dy * dy));
       dx = dx / magnitude;
       dy = dy / magnitude;
-      double gx = Xr[x], gy = Yr[x];
       double dotProduct = dx*gx + dy*gy;
       // square and multiply by the weight
-      sum += dotProduct * dotProduct * (Wr[x]/kWeightDivisor);
+      Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
     }
   }
-  
-  return sum / (float)(weight.rows * weight.cols);
 }
 
 void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
@@ -132,27 +129,58 @@ bool inMat(cv::Point p,int rows,int cols) {
   return p.x >= 0 && p.x < cols && p.y >= 0 && p.y < rows;
 }
 
-void floodKillEdges(cv::Mat &mat) {
-  // fill the edges so the flood fill spreads
-  rectangle(mat,cv::Rect(0,0,mat.cols-1,mat.rows-1),255);
+bool floodShouldPushPoint(const cv::Point &np, const cv::Mat &mat) {
+  return inMat(np, mat.rows, mat.cols);
+}
+
+// returns a mask
+cv::Mat floodKillEdges(cv::Mat &mat) {
+  rectangle(mat,cv::Rect(0,0,mat.cols,mat.rows),255);
   
+  cv::Mat mask(mat.rows, mat.cols, CV_8U, 255);
   std::queue<cv::Point> toDo;
   toDo.push(cv::Point(0,0));
   while (!toDo.empty()) {
     cv::Point p = toDo.front();
     toDo.pop();
-    // add in every direction
-    for (int dx = -1;dx <= 1; dx += 2) {
-      for (int dy = -1;dy <= 1; dy += 2) {
-        cv::Point np(p.x+dx,p.y+dy);
-        if (inMat(np, mat.rows, mat.cols) && mat.at<float>(np) != 0.0f) {
-          toDo.push(np);
-        }
-      }
+    if (mat.at<float>(p) == 0.0f) {
+      continue;
     }
+    // add in every direction
+    cv::Point np(p.x + 1, p.y); // right
+    if (floodShouldPushPoint(np, mat)) toDo.push(np);
+    np.x = p.x - 1; np.y = p.y; // left
+    if (floodShouldPushPoint(np, mat)) toDo.push(np);
+    np.x = p.x; np.y = p.y + 1; // down
+    if (floodShouldPushPoint(np, mat)) toDo.push(np);
+    np.x = p.x; np.y = p.y - 1; // up
+    if (floodShouldPushPoint(np, mat)) toDo.push(np);
     // kill it
     mat.at<float>(p) = 0.0f;
+    mask.at<uchar>(p) = 0;
   }
+  return mask;
+}
+
+cv::Mat matrixMagnitude(const cv::Mat &matX, const cv::Mat &matY) {
+  cv::Mat mags(matX.rows,matX.cols,CV_64F);
+  for (int y = 0; y < matX.rows; ++y) {
+    const double *Xr = matX.ptr<double>(y), *Yr = matY.ptr<double>(y);
+    double *Mr = mags.ptr<double>(y);
+    for (int x = 0; x < matX.cols; ++x) {
+      double gX = Xr[x], gY = Yr[x];
+      double magnitude = sqrt((gX * gX) + (gY * gY));
+      Mr[x] = magnitude;
+    }
+  }
+  return mags;
+}
+
+double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
+  cv::Scalar stdMagnGrad, meanMagnGrad;
+  cv::meanStdDev(mat, meanMagnGrad, stdMagnGrad);
+  double stdDev = stdMagnGrad[0] / sqrt(mat.rows*mat.cols);
+  return stdDevFactor * stdDev + meanMagnGrad[0];
 }
 
 cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
@@ -167,31 +195,24 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   cv::Mat gradientY;
   cv::Sobel(eyeROI, gradientY, CV_64F, 0, 1, kSobelKernelSize);
   //-- Normalize and threshold the gradient
-  // find the max
-  double max = 0;
-//  for (int y = 0; y < eyeROI.rows; ++y) {
-//    double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
-//    for (int x = 0; x < eyeROI.cols; ++x) {
-//      double gX = Xr[x], gY = Yr[x];
-//      double magnitude = sqrt((gX * gX) + (gY * gY));
-//      if (magnitude > max) {
-//        max = magnitude;
-//      }
-//    }
-//  }
-  // normalize and threshold it
-  double threshold = max * kGradientThreshold;
+  // compute all the magnitudes
+  cv::Mat mags = matrixMagnitude(gradientX, gradientY);
+  //compute the threshold
+  //double gradientThresh = computeDynamicThreshold(mags, 0.3);
+  double gradientThresh = kGradientThreshold;
+  //normalize
   for (int y = 0; y < eyeROI.rows; ++y) {
     double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+    const double *Mr = mags.ptr<double>(y);
     for (int x = 0; x < eyeROI.cols; ++x) {
       double gX = Xr[x], gY = Yr[x];
-      double magnitude = sqrt((gX * gX) + (gY * gY));
-      if (magnitude > threshold) {
+      double magnitude = Mr[x];
+      if (magnitude > gradientThresh) {
         Xr[x] = gX/magnitude;
         Yr[x] = gY/magnitude;
       } else {
-        Xr[x] = 0;
-        Yr[x] = 0;
+        Xr[x] = 0.0;
+        Yr[x] = 0.0;
       }
     }
   }
@@ -207,38 +228,52 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   }
   //imshow(debugWindow,weight);
   //-- Run the algorithm!
-  cv::Mat out(eyeROI.rows,eyeROI.cols,CV_32F);
+  cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
   // for each possible center
-  printf("Eye: %ix%i\n",out.cols,out.rows);
-  for (int cy = 0; cy < out.rows; cy++) {
-    float *Or = out.ptr<float>(cy);
-    for (int cx = 0; cx < out.cols; cx++) {
-      Or[cx] = testPossibleCenterFormula(cx, cy, weight, gradientX, gradientY);
+  printf("Eye: %ix%i\n",outSum.cols,outSum.rows);
+  for (int y = 0; y < weight.rows; ++y) {
+    const unsigned char *Wr = weight.ptr<unsigned char>(y);
+    const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+    for (int x = 0; x < weight.cols; ++x) {
+      double gX = Xr[x], gY = Yr[x];
+      if (gX == 0.0 && gY == 0.0) {
+        continue;
+      }
+      testPossibleCentersFormula(x, y, Wr[x], gX, gY, outSum);
     }
   }
+  // scale all the values down, basically averaging them
+  double numGradients = (weight.rows*weight.cols);
+  cv::Mat out;
+  outSum.convertTo(out, CV_32F,1.0/numGradients);
   //imshow(debugWindow,out);
   //-- Find the maximum point
   cv::Point maxP;
   double maxVal;
   cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
-  printf("Max: %i,%i - %f\n",maxP.x,maxP.y,maxVal);
   //-- Threshold it
-  cv::threshold(out, out, maxVal * kPostProcessThreshold, 0.0f, cv::THRESH_TOZERO);
   //-- Flood fill the edges
   // fill the edges so the flood fill spreads
   //rectangle(out,cv::Rect(0,0,out.cols,out.rows),255);
   // run the flood kill from 0,0
   //cv::floodFill(out, cv::Point(0,0), 0.0,NULL,0.97,1.0,cv::FLOODFILL_FIXED_RANGE);
-  //floodKillEdges(out);
+  cv::Mat floodClone;
+  double floodThresh = computeDynamicThreshold(out, 1.5);
+  //double floodThresh = maxVal * kPostProcessThreshold;
+  cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
+  cv::Mat mask = floodKillEdges(floodClone);
+  imshow(debugWindow + " Mask",mask);
   imshow(debugWindow,out);
   // redo max
-  cv::minMaxLoc(out, NULL,NULL,NULL,&maxP);
+  cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
+  printf("Max: %i,%i - %f\n",maxP.x,maxP.y,maxVal);
   return unscalePoint(maxP,eye);
 }
 
 void findEyes(cv::Mat frame_gray, cv::Rect face) {
   cv::Mat faceROI = frame_gray(face);
-  
+  double sigma = 0.006 * face.width;
+  GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);
   //-- Find eye regions and draw them
   int eye_region_width = face.width * (eye_percent_width/100.0);
   int eye_region_height = face.width * (eye_percent_height/100.0);
