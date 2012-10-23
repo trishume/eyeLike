@@ -7,6 +7,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include <mgl2/mgl.h>
+
 #include <iostream>
 #include <queue>
 #include <stdio.h>
@@ -18,6 +20,7 @@ const float kWeightDivisor = 150.0;
 const double kGradientThreshold = 500.0;
 const int kFastEyeWidth = 65;
 const float kPostProcessThreshold = 0.96;
+const bool kPlotVectorField = true;
 
 /** Function Headers */
 void detectAndDisplay( cv::Mat frame );
@@ -85,6 +88,32 @@ int main( int argc, const char** argv ) {
     }
   }
   return 0;
+}
+
+template<typename T> mglData *matToData(const cv::Mat &mat) {
+  mglData *data = new mglData(mat.cols,mat.rows);
+  for (int y = 0; y < mat.rows; ++y) {
+    const T *Mr = mat.ptr<T>(y);
+    for (int x = 0; x < mat.cols; ++x) {
+      data->Put(((mreal)Mr[x]),x,y);
+    }
+  }
+  return data;
+}
+
+void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::Mat &img) {
+  mglData *xData = matToData<double>(gradientX);
+  mglData *yData = matToData<double>(gradientY);
+  mglData *imgData = matToData<float>(img);
+  
+  mglGraph gr(0,gradientX.cols * 20, gradientY.rows * 20);
+  gr.Vect(*xData, *yData);
+  gr.Mesh(*imgData);
+  gr.WriteFrame("vecField.png");
+  
+  delete xData;
+  delete yData;
+  delete imgData;
 }
 
 bool rectInImage(cv::Rect rect, cv::Mat image) {
@@ -184,11 +213,11 @@ double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
 }
 
 cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
-  // draw the eye region
-  rectangle(face,eye,1234);
   cv::Mat eyeROIUnscaled = face(eye);
   cv::Mat eyeROI;
   scaleToFastSize(eyeROIUnscaled, eyeROI);
+  // draw eye region
+  rectangle(face,eye,1234);
   //-- Find the gradient
   cv::Mat gradientX;
   cv::Sobel(eyeROI, gradientX, CV_64F, 1, 0, kSobelKernelSize);
@@ -258,9 +287,13 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   // run the flood kill from 0,0
   //cv::floodFill(out, cv::Point(0,0), 0.0,NULL,0.97,1.0,cv::FLOODFILL_FIXED_RANGE);
   cv::Mat floodClone;
-  double floodThresh = computeDynamicThreshold(out, 1.5);
-  //double floodThresh = maxVal * kPostProcessThreshold;
+  //double floodThresh = computeDynamicThreshold(out, 1.5);
+  double floodThresh = maxVal * kPostProcessThreshold;
   cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
+  if(kPlotVectorField) {
+    plotVecField(gradientX, gradientY, floodClone);
+    imwrite("eyeFrame.png",eyeROIUnscaled);
+  }
   cv::Mat mask = floodKillEdges(floodClone);
   imshow(debugWindow + " Mask",mask);
   imshow(debugWindow,out);
@@ -285,14 +318,14 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   
   //-- Find Eye Centers
   cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
-  cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
+//  cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
   // change it to face coordinates
-  rightPupil.x += rightEyeRegion.x;
-  rightPupil.y += rightEyeRegion.y;
+//  rightPupil.x += rightEyeRegion.x;
+//  rightPupil.y += rightEyeRegion.y;
   leftPupil.x += leftEyeRegion.x;
   leftPupil.y += leftEyeRegion.y;
   
-  circle(faceROI, rightPupil, 3, 1234);
+//  circle(faceROI, rightPupil, 3, 1234);
   circle(faceROI, leftPupil, 3, 1234);
   imshow(face_window_name, faceROI);
 }
