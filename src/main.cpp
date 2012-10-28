@@ -24,6 +24,7 @@ const bool kPlotVectorField = true;
 
 /** Function Headers */
 void detectAndDisplay( cv::Mat frame );
+cv::Mat computeMatXGradient(const cv::Mat &mat);
 
 /** Global variables */
 //-- Note, either copy these two files from opencv/data/haarscascades to your current folder, or change these locations
@@ -57,6 +58,17 @@ int main( int argc, const char** argv ) {
   cv::moveWindow("Right Eye", 10, 600);
   cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
   cv::moveWindow("Left Eye", 10, 800);
+  
+  uchar m[1][8] = {{1,5,2,5,8,4,2,6}};
+  cv::Mat M = cv::Mat(1, 8, CV_8U, m);
+  cv::Mat grad = computeMatXGradient(M);
+  for (int y = 0; y < grad.rows; ++y) {
+    const double *Mr = grad.ptr<double>(y);
+    for (int x = 0; x < grad.cols; ++x) {
+      printf("%f, ",Mr[x]);
+    }
+  }
+  
   
   //-- 2. Read the video stream
   capture = cvCaptureFromCAM( -1 );
@@ -210,6 +222,23 @@ double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
   cv::meanStdDev(mat, meanMagnGrad, stdMagnGrad);
   double stdDev = stdMagnGrad[0] / sqrt(mat.rows*mat.cols);
   return stdDevFactor * stdDev + meanMagnGrad[0];
+}
+
+cv::Mat computeMatXGradient(const cv::Mat &mat) {
+  cv::Mat out(mat.rows,mat.cols,CV_64F);
+  
+  for (int y = 0; y < mat.rows; ++y) {
+    const uchar *Mr = mat.ptr<uchar>(y);
+    double *Or = out.ptr<double>(y);
+    
+    Or[0] = Mr[1] - Mr[0];
+    for (int x = 1; x < mat.cols - 1; ++x) {
+      Or[x] = (Mr[x+1] - Mr[x-1])/2.0;
+    }
+    Or[mat.cols-1] = Mr[mat.cols-1] - Mr[mat.cols-2];
+  }
+  
+  return out;
 }
 
 cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
