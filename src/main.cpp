@@ -20,7 +20,7 @@ const float kWeightDivisor = 150.0;
 const double kGradientThreshold = 500.0;
 const int kFastEyeWidth = 65;
 const float kPostProcessThreshold = 0.96;
-const bool kPlotVectorField = true;
+const bool kPlotVectorField = false;
 
 /** Function Headers */
 void detectAndDisplay( cv::Mat frame );
@@ -149,6 +149,7 @@ void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, do
       dx = dx / magnitude;
       dy = dy / magnitude;
       double dotProduct = dx*gx + dy*gy;
+      dotProduct = std::max(0.0,dotProduct);
       // square and multiply by the weight
       Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
     }
@@ -248,16 +249,15 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   // draw eye region
   rectangle(face,eye,1234);
   //-- Find the gradient
-  cv::Mat gradientX;
-  cv::Sobel(eyeROI, gradientX, CV_64F, 1, 0, kSobelKernelSize);
-  cv::Mat gradientY;
-  cv::Sobel(eyeROI, gradientY, CV_64F, 0, 1, kSobelKernelSize);
+  cv::Mat gradientX = computeMatXGradient(eyeROI);
+  cv::Mat gradientY = computeMatXGradient(eyeROI.t()).t();
   //-- Normalize and threshold the gradient
   // compute all the magnitudes
   cv::Mat mags = matrixMagnitude(gradientX, gradientY);
   //compute the threshold
-  //double gradientThresh = computeDynamicThreshold(mags, 0.3);
-  double gradientThresh = kGradientThreshold;
+  double gradientThresh = computeDynamicThreshold(mags, 0.3);
+  //double gradientThresh = kGradientThreshold;
+  //double gradientThresh = 0;
   //normalize
   for (int y = 0; y < eyeROI.rows; ++y) {
     double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
@@ -274,7 +274,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
       }
     }
   }
-  //imshow(debugWindow,gradientX);
+  imshow(debugWindow,gradientY);
   //-- Create a blurred and inverted image for weighting
   cv::Mat weight;
   GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
@@ -347,14 +347,14 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   
   //-- Find Eye Centers
   cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
-//  cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
+  cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
   // change it to face coordinates
-//  rightPupil.x += rightEyeRegion.x;
-//  rightPupil.y += rightEyeRegion.y;
+  rightPupil.x += rightEyeRegion.x;
+  rightPupil.y += rightEyeRegion.y;
   leftPupil.x += leftEyeRegion.x;
   leftPupil.y += leftEyeRegion.y;
   
-//  circle(faceROI, rightPupil, 3, 1234);
+  circle(faceROI, rightPupil, 3, 1234);
   circle(faceROI, leftPupil, 3, 1234);
   imshow(face_window_name, faceROI);
 }
