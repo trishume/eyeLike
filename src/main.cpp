@@ -18,7 +18,7 @@ const int kSobelKernelSize = 5;
 const int kWeightBlurSize = 7;
 const float kWeightDivisor = 150.0;
 const double kGradientThreshold = 500.0;
-const int kFastEyeWidth = 65;
+const int kFastEyeWidth = 50;
 const float kPostProcessThreshold = 0.96;
 const bool kPlotVectorField = false;
 
@@ -334,7 +334,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 
 void findEyes(cv::Mat frame_gray, cv::Rect face) {
   cv::Mat faceROI = frame_gray(face);
-  double sigma = 0.006 * face.width;
+  double sigma = 0.004 * face.width;
   GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);
   //-- Find eye regions and draw them
   int eye_region_width = face.width * (eye_percent_width/100.0);
