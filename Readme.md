@@ -1,4 +1,4 @@
-An OpenCV based webcam gaze tracker based on an algorithm by Fabian Timm.
+An OpenCV based webcam gaze tracker based on a simple image gradient-based eye center algorithm by Fabian Timm.
 
 Paper:
 Timm and Barth. Accurate eye centre localisation by means of gradients.
