@@ -29,11 +29,6 @@ std::string face_window_name = "Capture - Face";
 cv::RNG rng(12345);
 cv::Mat debugImage;
 
-int eye_percent_top = 25;
-int eye_percent_side = 13;
-int eye_percent_height = 30;
-int eye_percent_width = 35;
-
 /**
  * @function main
  */
@@ -94,12 +89,12 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
     GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);
   }
   //-- Find eye regions and draw them
-  int eye_region_width = face.width * (eye_percent_width/100.0);
-  int eye_region_height = face.width * (eye_percent_height/100.0);
-  int eye_region_top = face.height * (eye_percent_top/100.0);
-  cv::Rect leftEyeRegion(face.width*(eye_percent_side/100.0),
+  int eye_region_width = face.width * (kEyePercentWidth/100.0);
+  int eye_region_height = face.width * (kEyePercentHeight/100.0);
+  int eye_region_top = face.height * (kEyePercentTop/100.0);
+  cv::Rect leftEyeRegion(face.width*(kEyePercentSide/100.0),
                          eye_region_top,eye_region_width,eye_region_height);
-  cv::Rect rightEyeRegion(face.width - eye_region_width - face.width*(eye_percent_side/100.0),
+  cv::Rect rightEyeRegion(face.width - eye_region_width - face.width*(kEyePercentSide/100.0),
                           eye_region_top,eye_region_width,eye_region_height);
   
   //-- Find Eye Centers
