@@ -1,4 +1,7 @@
 An OpenCV based webcam gaze tracker based on a simple image gradient-based eye center algorithm by Fabian Timm.
+I am in the process of implementing the subpixel eye corner tracking algorithm by Jie Zhu.
+
+This is still a work in progress and does not track gaze yet.
 
 Paper:
 Timm and Barth. Accurate eye centre localisation by means of gradients.
