@@ -13,6 +13,7 @@
 
 #include "constants.h"
 #include "findEyeCenter.h"
+#include "findEyeCorner.h"
 
 /** Constants **/
 
@@ -48,6 +49,7 @@ int main( int argc, const char** argv ) {
   cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
   cv::moveWindow("Left Eye", 10, 800);
   
+  createCornerKernels();
   
   //-- 2. Read the video stream
   capture = cvCaptureFromCAM( -1 );
@@ -78,6 +80,9 @@ int main( int argc, const char** argv ) {
       
     }
   }
+  
+  releaseCornerKernels();
+  
   return 0;
 }
 
@@ -100,6 +105,18 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   //-- Find Eye Centers
   cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
   cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
+  // get corner regions
+  cv::Rect leftCornerRegion(leftEyeRegion);
+  leftCornerRegion.width -= leftPupil.x;
+  leftCornerRegion.x += leftPupil.x;
+  leftCornerRegion.height /= 2;
+  leftCornerRegion.y += leftCornerRegion.height / 2;
+  cv::Rect rightCornerRegion(rightEyeRegion);
+  rightCornerRegion.width = rightPupil.x;
+  rightCornerRegion.height /= 2;
+  rightCornerRegion.y += rightCornerRegion.height / 2;
+  rectangle(faceROI,leftCornerRegion,200);
+  rectangle(faceROI,rightCornerRegion,200);
   // change it to face coordinates
   rightPupil.x += rightEyeRegion.x;
   rightPupil.y += rightEyeRegion.y;
