@@ -8,7 +8,7 @@
 
 void createCornerKernels();
 void releaseCornerKernels();
-cv::Point detectEyeCorner(cv::Mat region,bool left);
-cv::Point2f detectSubpixelEyeCorner(cv::Mat region, bool left);
+cv::Point findEyeCorner(cv::Mat region,bool left);
+cv::Point2f findSubpixelEyeCorner(cv::Mat region, bool left);
 
 #endif

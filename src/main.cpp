@@ -117,14 +117,27 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   rightCornerRegion.y += rightCornerRegion.height / 2;
   rectangle(faceROI,leftCornerRegion,200);
   rectangle(faceROI,rightCornerRegion,200);
-  // change it to face coordinates
+  // change eye centers to face coordinates
   rightPupil.x += rightEyeRegion.x;
   rightPupil.y += rightEyeRegion.y;
   leftPupil.x += leftEyeRegion.x;
   leftPupil.y += leftEyeRegion.y;
-  
+  // draw eye centers
   circle(faceROI, rightPupil, 3, 1234);
   circle(faceROI, leftPupil, 3, 1234);
+  
+  //-- Find Eye Corners
+  if (kEnableEyeCorner) {
+    cv::Point leftCorner = findEyeCorner(faceROI(leftCornerRegion), false);
+    leftCorner.x += leftCornerRegion.x;
+    leftCorner.y += leftCornerRegion.y;
+    cv::Point rightCorner = findEyeCorner(faceROI(leftCornerRegion), false);
+    rightCorner.x += rightCornerRegion.x;
+    rightCorner.y += rightCornerRegion.y;
+    circle(faceROI, rightCorner, 3, 200);
+    circle(faceROI, leftCorner, 3, 200);
+  }
+  
   imshow(face_window_name, faceROI);
 }
 

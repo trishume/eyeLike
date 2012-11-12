@@ -92,7 +92,11 @@ void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, do
       double dotProduct = dx*gx + dy*gy;
       dotProduct = std::max(0.0,dotProduct);
       // square and multiply by the weight
-      Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
+      if (kEnableWeight) {
+        Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
+      } else {
+        Or[cx] += dotProduct * dotProduct;
+      }
     }
   }
 }
@@ -165,19 +169,21 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   double maxVal;
   cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
   //-- Flood fill the edges
-  cv::Mat floodClone;
-  //double floodThresh = computeDynamicThreshold(out, 1.5);
-  double floodThresh = maxVal * kPostProcessThreshold;
-  cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
-  if(kPlotVectorField) {
-    plotVecField(gradientX, gradientY, floodClone);
-    imwrite("eyeFrame.png",eyeROIUnscaled);
+  if(kEnablePostProcess) {
+    cv::Mat floodClone;
+    //double floodThresh = computeDynamicThreshold(out, 1.5);
+    double floodThresh = maxVal * kPostProcessThreshold;
+    cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
+    if(kPlotVectorField) {
+      plotVecField(gradientX, gradientY, floodClone);
+      imwrite("eyeFrame.png",eyeROIUnscaled);
+    }
+    cv::Mat mask = floodKillEdges(floodClone);
+    //imshow(debugWindow + " Mask",mask);
+    //imshow(debugWindow,out);
+    // redo max
+    cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
   }
-  cv::Mat mask = floodKillEdges(floodClone);
-  //imshow(debugWindow + " Mask",mask);
-  //imshow(debugWindow,out);
-  // redo max
-  cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
   return unscalePoint(maxP,eye);
 }
 
