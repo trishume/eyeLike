@@ -114,7 +114,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   // compute all the magnitudes
   cv::Mat mags = matrixMagnitude(gradientX, gradientY);
   //compute the threshold
-  double gradientThresh = computeDynamicThreshold(mags, 0.3);
+  double gradientThresh = computeDynamicThreshold(mags, kGradientThreshold);
   //double gradientThresh = kGradientThreshold;
   //double gradientThresh = 0;
   //normalize
@@ -133,7 +133,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
       }
     }
   }
-  //imshow(debugWindow,gradientY);
+  imshow(debugWindow,gradientX);
   //-- Create a blurred and inverted image for weighting
   cv::Mat weight;
   GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
@@ -143,7 +143,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
       row[x] = (255 - row[x]);
     }
   }
-  imshow(debugWindow,weight);
+  //imshow(debugWindow,weight);
   //-- Run the algorithm!
   cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
   // for each possible center

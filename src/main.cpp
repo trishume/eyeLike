@@ -146,9 +146,13 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
  */
 void detectAndDisplay( cv::Mat frame ) {
   std::vector<cv::Rect> faces;
-  cv::Mat frame_gray;
+//  cv::Mat frame_gray;
   
-  cvtColor( frame, frame_gray, CV_BGR2GRAY );
+  std::vector<cv::Mat> rgbChannels(3);
+  cv::split(frame, rgbChannels);
+  cv::Mat frame_gray = rgbChannels[2];
+  
+//  cvtColor( frame, frame_gray, CV_BGR2GRAY );
   //equalizeHist( frame_gray, frame_gray );
   //cv::pow(frame_gray, 0.5, frame_gray);
   //-- Detect faces

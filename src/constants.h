@@ -15,17 +15,17 @@ const bool kSmoothFaceImage = false;
 const float kSmoothFaceFactor = 0.005;
 
 // Algorithm Parameters
-const int kFastEyeWidth = 55;
+const int kFastEyeWidth = 80;
 const int kWeightBlurSize = 5;
-const bool kEnableWeight = true;
+const bool kEnableWeight = false;
 const float kWeightDivisor = 150.0;
-const double kGradientThreshold = 500.0;
+const double kGradientThreshold = 50.0;
 
 // Postprocessing
-const bool kEnablePostProcess = false;
+const bool kEnablePostProcess = true;
 const float kPostProcessThreshold = 0.97;
 
 // Eye Corner
-const bool kEnableEyeCorner = true;
+const bool kEnableEyeCorner = false;
 
 #endif

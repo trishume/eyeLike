@@ -43,9 +43,17 @@ cv::Mat eyeCornerMap(const cv::Mat &region, bool left) {
 
 cv::Point findEyeCorner(cv::Mat region,bool left) {
   cv::Mat cornerMap = eyeCornerMap(region, left);
-  imshow("Corner map",cornerMap);
+  //imshow("Corner map",cornerMap);
   cv::Point maxP;
   cv::minMaxLoc(cornerMap, NULL,NULL,NULL,&maxP);
+  // GFTT
+//  std::vector<cv::Point2f> corners;
+//  cv::goodFeaturesToTrack(region, corners, 500, 0.005, 20);
+//  for (int i = 0; i < corners.size(); ++i) {
+//    cv::circle(region, corners[i], 2, 200);
+//  }
+//  imshow("Corners",region);
+  
   return maxP;
 }
 cv::Point2f findSubpixelEyeCorner(cv::Mat region, bool left) {
