@@ -1,31 +1,34 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-// Debugging
+// --Debugging
 const bool kPlotVectorField = false;
 
-// Size constants
+// --Size constants
 const int kEyePercentTop = 25;
 const int kEyePercentSide = 13;
 const int kEyePercentHeight = 30;
 const int kEyePercentWidth = 35;
 
-// Preprocessing
+// --Preprocessing
 const bool kSmoothFaceImage = false;
 const float kSmoothFaceFactor = 0.005;
 
-// Algorithm Parameters
+// --Algorithm Parameters
 const int kFastEyeWidth = 80;
+const double kIrisBoxFraction = 1.0;
+// half size of box for iris gradients.
+const int kIrisBoxSize = (kIrisBoxFraction * kFastEyeWidth) / 2;
 const int kWeightBlurSize = 5;
-const bool kEnableWeight = false;
+const bool kEnableWeight = true;
 const float kWeightDivisor = 150.0;
 const double kGradientThreshold = 50.0;
 
-// Postprocessing
+// --Postprocessing
 const bool kEnablePostProcess = true;
 const float kPostProcessThreshold = 0.97;
 
-// Eye Corner
+// --Eye Corner
 const bool kEnableEyeCorner = false;
 
 #endif

@@ -74,14 +74,21 @@ cv::Mat computeMatXGradient(const cv::Mat &mat) {
 
 #pragma mark Main Algorithm
 
-void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
-  // for all possible centers
-  for (int cy = 0; cy < out.rows; ++cy) {
-    double *Or = out.ptr<double>(cy);
-    for (int cx = 0; cx < out.cols; ++cx) {
+float testPossibleCenterFormula(int cx, int cy, unsigned char weight,const cv::Mat &gradientX, const cv::Mat &gradientY) {
+  // for all gradients
+  double sum = 0.0;
+  int numGradients = 0;
+  for (int y = std::max(0,cy-kIrisBoxSize); y < std::min(gradientX.rows,cy+kIrisBoxSize); ++y) {
+    const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+    for (int x = std::max(0,cx-kIrisBoxSize); x < std::min(gradientX.cols,cx+kIrisBoxSize); ++x) {
+      double gX = Xr[x], gY = Yr[x];
+      if (gX == 0.0 && gY == 0.0) {
+        continue;
+      }
       if (x == cx && y == cy) {
         continue;
       }
+      numGradients += 1;
       // create a vector from the possible center to the gradient origin
       double dx = x - cx;
       double dy = y - cy;
@@ -89,16 +96,17 @@ void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, do
       double magnitude = sqrt((dx * dx) + (dy * dy));
       dx = dx / magnitude;
       dy = dy / magnitude;
-      double dotProduct = dx*gx + dy*gy;
+      double dotProduct = dx*gX + dy*gY;
       dotProduct = std::max(0.0,dotProduct);
       // square and multiply by the weight
       if (kEnableWeight) {
-        Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
+        sum += dotProduct * dotProduct * (weight/kWeightDivisor);
       } else {
-        Or[cx] += dotProduct * dotProduct;
+        sum += dotProduct * dotProduct;
       }
     }
   }
+  return sum / numGradients;
 }
 
 cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
@@ -133,7 +141,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
       }
     }
   }
-  imshow(debugWindow,gradientX);
+  //imshow(debugWindow,gradientX);
   //-- Create a blurred and inverted image for weighting
   cv::Mat weight;
   GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
@@ -145,29 +153,22 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   }
   //imshow(debugWindow,weight);
   //-- Run the algorithm!
-  cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
+  cv::Mat out = cv::Mat(eyeROI.rows,eyeROI.cols,CV_32F);
   // for each possible center
-  printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+  printf("Eye Size: %ix%i\n",out.cols,out.rows);
   for (int y = 0; y < weight.rows; ++y) {
+    float *Or = out.ptr<float>(y);
     const unsigned char *Wr = weight.ptr<unsigned char>(y);
-    const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
     for (int x = 0; x < weight.cols; ++x) {
-      double gX = Xr[x], gY = Yr[x];
-      if (gX == 0.0 && gY == 0.0) {
-        continue;
-      }
-      testPossibleCentersFormula(x, y, Wr[x], gX, gY, outSum);
+      Or[x] = testPossibleCenterFormula(x, y, Wr[x], gradientX, gradientY);
     }
   }
-  // scale all the values down, basically averaging them
-  double numGradients = (weight.rows*weight.cols);
-  cv::Mat out;
-  outSum.convertTo(out, CV_32F,1.0/numGradients);
-  //imshow(debugWindow,out);
   //-- Find the maximum point
   cv::Point maxP;
   double maxVal;
   cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
+  cv::line(out, cv::Point(maxP.x-kIrisBoxSize,maxP.y), cv::Point(maxP.x+kIrisBoxSize,maxP.y), 250);
+  imshow(debugWindow,out);
   //-- Flood fill the edges
   if(kEnablePostProcess) {
     cv::Mat floodClone;
