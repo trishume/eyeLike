@@ -29,6 +29,7 @@ std::string main_window_name = "Capture - Face detection";
 std::string face_window_name = "Capture - Face";
 cv::RNG rng(12345);
 cv::Mat debugImage;
+cv::Mat skinCrCbHist = cv::Mat::zeros(cv::Size(256, 256), CV_8UC1);
 
 /**
  * @function main
@@ -50,6 +51,8 @@ int main( int argc, const char** argv ) {
   cv::moveWindow("Left Eye", 10, 800);
   
   createCornerKernels();
+  ellipse(skinCrCbHist, cv::Point(113, 155.6), cv::Size(23.4, 15.2),
+          43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
   
   //-- 2. Read the video stream
   capture = cvCaptureFromCAM( -1 );
@@ -141,6 +144,28 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   imshow(face_window_name, faceROI);
 }
 
+
+cv::Mat findSkin (cv::Mat &frame) {
+  cv::Mat input;
+  cv::Mat output = cv::Mat(frame.rows,frame.cols, CV_8U);
+  
+  cvtColor(frame, input, CV_BGR2YCrCb);
+  
+  for (int y = 0; y < input.rows; ++y) {
+    const cv::Vec3b *Mr = input.ptr<cv::Vec3b>(y);
+//    uchar *Or = output.ptr<uchar>(y);
+    cv::Vec3b *Or = frame.ptr<cv::Vec3b>(y);
+    for (int x = 0; x < input.cols; ++x) {
+      cv::Vec3b ycrcb = Mr[x];
+//      Or[x] = (skinCrCbHist.at<uchar>(ycrcb[1], ycrcb[2]) > 0) ? 255 : 0;
+      if(skinCrCbHist.at<uchar>(ycrcb[1], ycrcb[2]) == 0) {
+        Or[x] = cv::Vec3b(0,0,0);
+      }
+    }
+  }
+  return output;
+}
+
 /**
  * @function detectAndDisplay
  */
@@ -157,6 +182,7 @@ void detectAndDisplay( cv::Mat frame ) {
   //cv::pow(frame_gray, 0.5, frame_gray);
   //-- Detect faces
   face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE|CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(150, 150) );
+//  findSkin(debugImage);
   
   for( int i = 0; i < faces.size(); i++ )
   {
