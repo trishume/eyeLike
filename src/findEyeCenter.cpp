@@ -2,7 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <mgl2/mgl.h>
+//#include <mgl2/mgl.h>
 
 #include <iostream>
 #include <queue>
@@ -15,7 +15,7 @@
 cv::Mat floodKillEdges(cv::Mat &mat);
 
 #pragma mark Visualization
-
+/*
 template<typename T> mglData *matToData(const cv::Mat &mat) {
   mglData *data = new mglData(mat.cols,mat.rows);
   for (int y = 0; y < mat.rows; ++y) {
@@ -40,7 +40,7 @@ void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::
   delete xData;
   delete yData;
   delete imgData;
-}
+}*/
 
 #pragma mark Helpers
 
@@ -175,7 +175,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
     double floodThresh = maxVal * kPostProcessThreshold;
     cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
     if(kPlotVectorField) {
-      plotVecField(gradientX, gradientY, floodClone);
+      //plotVecField(gradientX, gradientY, floodClone);
       imwrite("eyeFrame.png",eyeROIUnscaled);
     }
     cv::Mat mask = floodKillEdges(floodClone);
