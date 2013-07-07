@@ -91,6 +91,7 @@ int main( int argc, const char** argv ) {
 
 void findEyes(cv::Mat frame_gray, cv::Rect face) {
   cv::Mat faceROI = frame_gray(face);
+  cv::Mat debugFace = faceROI;
 
   if (kSmoothFaceImage) {
     double sigma = kSmoothFaceFactor * face.width;
@@ -127,18 +128,18 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   rightRightCornerRegion.x += rightPupil.x;
   rightRightCornerRegion.height /= 2;
   rightRightCornerRegion.y += rightRightCornerRegion.height / 2;
-  rectangle(faceROI,leftRightCornerRegion,200);
-  rectangle(faceROI,leftLeftCornerRegion,200);
-  rectangle(faceROI,rightLeftCornerRegion,200);
-  rectangle(faceROI,rightRightCornerRegion,200);
+  rectangle(debugFace,leftRightCornerRegion,200);
+  rectangle(debugFace,leftLeftCornerRegion,200);
+  rectangle(debugFace,rightLeftCornerRegion,200);
+  rectangle(debugFace,rightRightCornerRegion,200);
   // change eye centers to face coordinates
   rightPupil.x += rightEyeRegion.x;
   rightPupil.y += rightEyeRegion.y;
   leftPupil.x += leftEyeRegion.x;
   leftPupil.y += leftEyeRegion.y;
   // draw eye centers
-  circle(faceROI, rightPupil, 3, 1234);
-  circle(faceROI, leftPupil, 3, 1234);
+  circle(debugFace, rightPupil, 3, 1234);
+  circle(debugFace, leftPupil, 3, 1234);
 
   //-- Find Eye Corners
   if (kEnableEyeCorner) {
@@ -161,6 +162,9 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   }
 
   imshow(face_window_name, faceROI);
+//  cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
+//  cv::Mat destinationROI = debugImage( roi );
+//  faceROI.copyTo( destinationROI );
 }
 
 
