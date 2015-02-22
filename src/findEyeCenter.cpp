@@ -74,10 +74,11 @@ cv::Mat computeMatXGradient(const cv::Mat &mat) {
 
 #pragma mark Main Algorithm
 
-void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
+void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, double gy, cv::Mat &out) {
   // for all possible centers
   for (int cy = 0; cy < out.rows; ++cy) {
     double *Or = out.ptr<double>(cy);
+    const unsigned char *Wr = weight.ptr<unsigned char>(cy);
     for (int cx = 0; cx < out.cols; ++cx) {
       if (x == cx && y == cy) {
         continue;
@@ -93,7 +94,7 @@ void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, do
       dotProduct = std::max(0.0,dotProduct);
       // square and multiply by the weight
       if (kEnableWeight) {
-        Or[cx] += dotProduct * dotProduct * (weight/kWeightDivisor);
+        Or[cx] += dotProduct * dotProduct * (Wr[cx]/kWeightDivisor);
       } else {
         Or[cx] += dotProduct * dotProduct;
       }
@@ -152,14 +153,13 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   // every possible gradient location for every center.
   printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
   for (int y = 0; y < weight.rows; ++y) {
-    const unsigned char *Wr = weight.ptr<unsigned char>(y);
     const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
     for (int x = 0; x < weight.cols; ++x) {
       double gX = Xr[x], gY = Yr[x];
       if (gX == 0.0 && gY == 0.0) {
         continue;
       }
-      testPossibleCentersFormula(x, y, Wr[x], gX, gY, outSum);
+      testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
     }
   }
   // scale all the values down, basically averaging them
