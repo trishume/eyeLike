@@ -1,7 +1,12 @@
 ##eyeLike
 An OpenCV based webcam gaze tracker based on a simple image gradient-based eye center algorithm by Fabian Timm.
 
-This is still a work in progress and does not track gaze yet.
+## DISCLAIMER
+**This does not track gaze yet.** It is basically just a developer reference implementation of Fabian Timm's algorithm that shows some debugging windows with points on your pupils.
+
+If you want cheap gaze tracking and don't mind hardware check out [The Eye Tribe](https://theeyetribe.com/).
+If you want webcam-based eye tracking contact [Xlabs](http://xlabsgaze.com/) or use their chrome plugin and SDK.
+If you're looking for open source your only real bet is [Pupil](http://pupil-labs.com/) but that requires an expensive hardware headset.
 
 ##Status
 The eye center tracking works well but I don't have a reference point like eye corner yet so it can't actually track
@@ -39,8 +44,8 @@ There is some way to use CMake on Windows but I am not familiar with it.
 
 ##Paper:
 Timm and Barth. Accurate eye centre localisation by means of gradients.
-In Proceedings of the Int. Conference on Computer Theory and 
-Applications (VISAPP), volume 1, pages 125-130, Algarve, Portugal, 
+In Proceedings of the Int. Conference on Computer Theory and
+Applications (VISAPP), volume 1, pages 125-130, Algarve, Portugal,
 2011. INSTICC.
 
 (also see youtube video at http://www.youtube.com/watch?feature=player_embedded&v=aGmGyFLQAFM)
