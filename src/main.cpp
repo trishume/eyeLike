@@ -138,9 +138,14 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
     leftPupil.x += leftEyeRegion.x;
     leftPupil.y += leftEyeRegion.y;
     // draw eye centers
-    circle(debugFace, rightPupil, 3, 1234);
-    circle(debugFace, leftPupil, 3, 1234);
-    
+//    circle(debugFace, rightPupil, 3, 1234);
+//    circle(debugFace, leftPupil, 3, 1234);
+    cv::line(debugFace, cv::Point(rightPupil.x - 8, rightPupil.y - 8), cv::Point(rightPupil.x + 8, rightPupil.y + 8), 1488);
+    cv::line(debugFace, cv::Point(rightPupil.x - 8, rightPupil.y + 8), cv::Point(rightPupil.x + 8, rightPupil.y - 8), 1488);
+
+    cv::line(debugFace, cv::Point(leftPupil.x - 8, leftPupil.y - 8), cv::Point(leftPupil.x + 8, leftPupil.y + 8), 1488);
+    cv::line(debugFace, cv::Point(leftPupil.x - 8, leftPupil.y + 8), cv::Point(leftPupil.x + 8, leftPupil.y - 8), 1488);
+
     //-- Find Eye Corners
     if (kEnableEyeCorner) {
         cv::Point2f leftRightCorner = findEyeCorner(faceROI(leftRightCornerRegion), true, false);
