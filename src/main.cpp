@@ -32,7 +32,6 @@ cv::Mat skinCrCbHist = cv::Mat::zeros(cv::Size(256, 256), CV_8UC1);
  * @function main
  */
 int main( int argc, const char** argv ) {
-  CvCapture* capture;
   cv::Mat frame;
 
   // Load the cascades
@@ -55,11 +54,18 @@ int main( int argc, const char** argv ) {
   ellipse(skinCrCbHist, cv::Point(113, 155.6), cv::Size(23.4, 15.2),
           43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
 
-   // Read the video stream
-  capture = cvCaptureFromCAM( -1 );
+  // I make an attempt at supporting both 2.x and 3.x OpenCV
+#if CV_MAJOR_VERSION < 3
+  CvCapture* capture = cvCaptureFromCAM( -1 );
   if( capture ) {
     while( true ) {
       frame = cvQueryFrame( capture );
+#else
+  cv::VideoCapture capture(-1);
+  if( capture.isOpened() ) {
+    while( true ) {
+      capture.read(frame);
+#endif
       // mirror it
       cv::flip(frame, frame, 1);
       frame.copyTo(debugImage);
