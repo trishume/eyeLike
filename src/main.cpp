@@ -56,12 +56,12 @@ int main( int argc, const char** argv ) {
 
   // I make an attempt at supporting both 2.x and 3.x OpenCV
 #if CV_MAJOR_VERSION < 3
-  CvCapture* capture = cvCaptureFromCAM( -1 );
+  CvCapture* capture = cvCaptureFromCAM( 0 );
   if( capture ) {
     while( true ) {
       frame = cvQueryFrame( capture );
 #else
-  cv::VideoCapture capture(-1);
+  cv::VideoCapture capture(0);
   if( capture.isOpened() ) {
     while( true ) {
       capture.read(frame);
