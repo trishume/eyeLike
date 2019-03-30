@@ -20,7 +20,7 @@ void detectAndDisplay( cv::Mat frame );
 
 /** Global variables */
 //-- Note, either copy these two files from opencv/data/haarscascades to your current folder, or change these locations
-cv::String face_cascade_name = "../../../res/haarcascade_frontalface_alt.xml";
+cv::String face_cascade_name = "../res/haarcascade_frontalface_alt.xml";
 cv::CascadeClassifier face_cascade;
 std::string main_window_name = "Capture - Face detection";
 std::string face_window_name = "Capture - Face";
@@ -37,21 +37,21 @@ int main( int argc, const char** argv ) {
   // Load the cascades
   if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading face cascade, please change face_cascade_name in source code.\n"); return -1; };
 
-  cv::namedWindow(main_window_name,CV_WINDOW_NORMAL);
+  cv::namedWindow(main_window_name,cv::WINDOW_NORMAL);
   cv::moveWindow(main_window_name, 400, 100);
-  cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
+  cv::namedWindow(face_window_name,cv::WINDOW_NORMAL);
   cv::moveWindow(face_window_name, 10, 100);
-  cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
+  cv::namedWindow("Right Eye",cv::WINDOW_NORMAL);
   cv::moveWindow("Right Eye", 10, 600);
-  cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
+  cv::namedWindow("Left Eye",cv::WINDOW_NORMAL);
   cv::moveWindow("Left Eye", 10, 800);
-  cv::namedWindow("aa",CV_WINDOW_NORMAL);
+  cv::namedWindow("aa",cv::WINDOW_NORMAL);
   cv::moveWindow("aa", 10, 800);
-  cv::namedWindow("aaa",CV_WINDOW_NORMAL);
+  cv::namedWindow("aaa",cv::WINDOW_NORMAL);
   cv::moveWindow("aaa", 10, 800);
 
   createCornerKernels();
-  ellipse(skinCrCbHist, cv::Point(113, 155.6), cv::Size(23.4, 15.2),
+  ellipse(skinCrCbHist, cv::Point(113, 155), cv::Size(23, 15),
           43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
 
   // I make an attempt at supporting both 2.x and 3.x OpenCV
@@ -178,7 +178,7 @@ cv::Mat findSkin (cv::Mat &frame) {
   cv::Mat input;
   cv::Mat output = cv::Mat(frame.rows,frame.cols, CV_8U);
 
-  cvtColor(frame, input, CV_BGR2YCrCb);
+  cvtColor(frame, input, cv::COLOR_BGR2YCrCb);
 
   for (int y = 0; y < input.rows; ++y) {
     const cv::Vec3b *Mr = input.ptr<cv::Vec3b>(y);
@@ -210,7 +210,7 @@ void detectAndDisplay( cv::Mat frame ) {
   //equalizeHist( frame_gray, frame_gray );
   //cv::pow(frame_gray, CV_64F, frame_gray);
   //-- Detect faces
-  face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE|CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(150, 150) );
+  face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|cv::CASCADE_SCALE_IMAGE|cv::CASCADE_FIND_BIGGEST_OBJECT, cv::Size(150, 150) );
 //  findSkin(debugImage);
 
   for( int i = 0; i < faces.size(); i++ )
